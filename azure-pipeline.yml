@@ -1,0 +1,33 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+parameters:
+- name: jmeterFile
+  displayName: 'Seleccione JMeter File'  
+  type: string
+  values:
+  - RechazoOC.jmx
+  - ConsultarOC.jmx
+  - AprobacionOC.jmx
+
+pool:
+  vmImage: ubuntu-latest
+  
+steps:
+- task: AlexandreGattiker.jmeter-tasks.custom-jmeter-installer-task.JMeterInstaller@0
+  displayName: 'Install JMeter 5.4.2'
+  inputs:
+    plugins: 'jpgc-casutg,jpgc-dummy,jpgc-ffw,jpgc-fifo,jpgc-functions,jpgc-json,jpgc-perfmon,jpgc-prmctl,jpgc-tst,jmeter.backendlistener.azure'
+
+- script: jmeter -n -t ENV=${{ parameters.jmeterFile }} -l results.csv -e -o html
+  workingDirectory: '$(Build.SourcesDirectory)'
+  displayName: 'Run JMeter'
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish HTML'
+  inputs:
+    targetPath: '$(Pipeline.Workspace)/s/html'
+    artifact: jmeterReport
+  condition: always()
